@@ -22,6 +22,7 @@
 % end
 
 function average = DBA(sequences)
+    %sequences is a cell array of time series
     average = repmat(sequences{medoidIndex(sequences)},1);
 	for i=1:15
 		average=DBA_one_iteration(average,sequences);
@@ -37,21 +38,21 @@ function sos = sumOfSquares(s,sequences)
 end
 
 function score = dtw(S,T)
-    costM = zeros(length(S),length(T));
+    costM = zeros(size(S, 1),size(T, 1));
     
-    costM(1,1) = (S(1)-T(1))^2;
-    for i=2:length(S)
-        costM(i,1)= costM(i-1,1)+ (S(i)-T(1))^2;
+    costM(1,1) = sum((S(1, :) - T(1, :)).^2);
+    for i=2:size(S, 1)
+        costM(i,1)= costM(i-1,1)+ sum((S(i,:)-T(1,:)).^2);
     end
-    for i=2:length(T)
-        costM(1,i)= costM(1,i-1)+ (S(1)-T(i))^2;
+    for i=2:size(T, 1)
+        costM(1,i)= costM(1,i-1)+ sum((S(1,:)-T(i,:)).^2);
     end
-    for i=2:length(S)
-        for j=2:length(T)
-            costM(i,j)=min(min(costM(i-1,j-1),costM(i,j-1)),costM(i-1,j))+(S(i)-T(j))^2;
+    for i=2:size(S, 1)
+        for j=2:size(T, 1)
+            costM(i,j)=min(min(costM(i-1,j-1),costM(i,j-1)),costM(i-1,j))+sum((S(i,:)-T(j,:)).^2);
         end
     end
-    score = sqrt(costM(length(S),length(T)));
+    score = sqrt(costM(size(S,1),size(T,1)));
 end
 
 function index = medoidIndex(sequences) 
@@ -69,8 +70,8 @@ end
 
 function average = DBA_one_iteration(averageS,sequences)
 
-	tupleAssociation = cell (1, size(averageS,2));
-	for t=1:size(averageS,2)
+	tupleAssociation = cell (1, size(averageS,1));
+	for t=1:size(averageS,1)
 		tupleAssociation{t}=[];
 	end
 
@@ -79,20 +80,20 @@ function average = DBA_one_iteration(averageS,sequences)
 
 	for k=1:length(sequences)
 	    sequence = sequences{k};
-	    costMatrix(1,1) = distanceTo(averageS(1),sequence(1));
+	    costMatrix(1,1) = distanceTo(averageS(1,:),sequence(1,:));
 	    pathMatrix(1,1) = -1;
-	    for i=2:size(averageS,2)
+	    for i=2:size(averageS,1)
 		costMatrix(i,1) = costMatrix(i-1,1) + distanceTo(averageS(i),sequence(1));
 		pathMatrix(i,1) = 2;
 	    end
 	    
-	    for j=2:size(sequence,2)
-		costMatrix(1,j) = costMatrix(1,j-1) + distanceTo(sequence(j),averageS(1));
+	    for j=2:size(sequence,1)
+		costMatrix(1,j) = costMatrix(1,j-1) + distanceTo(sequence(j,:),averageS(1,:));
 		pathMatrix(1,j) = 1;
 	    end
 	    
-	    for i=2:size(averageS,2)
-		for j=2:size(sequence,2)
+	    for i=2:size(averageS,1)
+		for j=2:size(sequence,1)
 		    indiceRes = ArgMin3(costMatrix(i-1,j-1),costMatrix(i,j-1),costMatrix(i-1,j));
 		    pathMatrix(i,j)=indiceRes;
 		    
@@ -104,16 +105,16 @@ function average = DBA_one_iteration(averageS,sequences)
 			res = costMatrix(i-1,j);
 		    end
 		    
-		    costMatrix(i,j) = res + distanceTo(averageS(i),sequence(j));
+		    costMatrix(i,j) = res + distanceTo(averageS(i,:),sequence(j,:));
 		    
 		end
 	    end
 	    
-	    i=size(averageS,2);
-	    j=size(sequence,2);
+	    i=size(averageS,1);
+	    j=size(sequence,1);
 	    
 	    while(true)
-		tupleAssociation{i}(end+1) = sequence(j);
+		tupleAssociation{i}(end+1,:) = sequence(j,:);
 		if pathMatrix(i,j)==0
 		    i=i-1;
 		    j=j-1;
@@ -128,8 +129,8 @@ function average = DBA_one_iteration(averageS,sequences)
 	    
 	end
 
-	for t=1:size(averageS,2)
-	   averageS(t) = mean(tupleAssociation{t});
+	for t=1:size(averageS,1)
+	   averageS(t, :) = mean(tupleAssociation{t}, 1);
 	end
 	   
 	average = averageS;
@@ -160,7 +161,7 @@ end
 
 
 function dist = distanceTo(a,b)
-    dist=(a-b)*(a-b);
+    dist=(a-b)*(a-b)';
 end
 
 function ex = test()
