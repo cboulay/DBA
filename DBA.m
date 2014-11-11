@@ -22,7 +22,8 @@
 % end
 
 function average = DBA(sequences)
-    %sequences is a cell array of time series
+    %sequences is a cell array of time series,
+    %each of shape nSamples x nStreams
     average = repmat(sequences{medoidIndex(sequences)},1);
 	for i=1:15
 		average=DBA_one_iteration(average,sequences);
